@@ -64,28 +64,60 @@ function handleClick(e) {
   e.preventDefault();
   e.stopPropagation();
   
-  // コンピューテッドスタイルを取得
-  const computedStyle = window.getComputedStyle(e.target);
-  
-  const fontInfo = {
-    fontFamily: computedStyle.fontFamily,
-    fontSize: computedStyle.fontSize,
-    fontWeight: computedStyle.fontWeight,
-    lineHeight: computedStyle.lineHeight,
-    color: computedStyle.color
-  };
+  // 実際に使用されているフォントを取得
+  const actualFont = getActualFont(e.target);
   
   // ポップアップにフォント情報を送信
   chrome.runtime.sendMessage({
     action: 'fontDetected',
-    fontInfo: fontInfo
+    fontName: actualFont
   });
   
   // 情報ボックスを表示
-  showInfoBox(e.target, fontInfo);
+  showInfoBox(e.target, actualFont);
 }
 
-function showInfoBox(element, fontInfo) {
+// 実際に使用されているフォントを取得する関数
+function getActualFont(element) {
+  // Canvas を使用して実際のフォントを検出
+  const text = element.textContent || 'Test';
+  const computedStyle = window.getComputedStyle(element);
+  const fontFamily = computedStyle.fontFamily;
+  
+  // フォントファミリーをパースして個別のフォントに分割
+  const fonts = fontFamily.split(',').map(f => f.trim().replace(/['"]/g, ''));
+  
+  // 各フォントをテストして実際に使用されているものを見つける
+  for (const font of fonts) {
+    if (isFontAvailable(font)) {
+      return font;
+    }
+  }
+  
+  // デフォルトフォントを返す
+  return fonts[0] || 'Unknown';
+}
+
+// フォントが利用可能かチェックする関数
+function isFontAvailable(fontName) {
+  // 仮想的なテキストを使用してフォントの幅を比較
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  const text = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  
+  // デフォルトフォントでの幅を取得
+  context.font = '72px monospace';
+  const defaultWidth = context.measureText(text).width;
+  
+  // 指定フォントでの幅を取得
+  context.font = `72px "${fontName}", monospace`;
+  const fontWidth = context.measureText(text).width;
+  
+  // 幅が異なれば、フォントが利用可能
+  return defaultWidth !== fontWidth;
+}
+
+function showInfoBox(element, fontName) {
   // 既存の情報ボックスを削除
   if (infoBox) {
     infoBox.remove();
@@ -95,27 +127,7 @@ function showInfoBox(element, fontInfo) {
   infoBox = document.createElement('div');
   infoBox.className = 'font-detector-info-box';
   infoBox.innerHTML = `
-    <div class="font-detector-info-header">フォント情報</div>
-    <div class="font-detector-info-item">
-      <span class="font-detector-info-label">Font Family:</span>
-      <span class="font-detector-info-value">${fontInfo.fontFamily}</span>
-    </div>
-    <div class="font-detector-info-item">
-      <span class="font-detector-info-label">Font Size:</span>
-      <span class="font-detector-info-value">${fontInfo.fontSize}</span>
-    </div>
-    <div class="font-detector-info-item">
-      <span class="font-detector-info-label">Font Weight:</span>
-      <span class="font-detector-info-value">${fontInfo.fontWeight}</span>
-    </div>
-    <div class="font-detector-info-item">
-      <span class="font-detector-info-label">Line Height:</span>
-      <span class="font-detector-info-value">${fontInfo.lineHeight}</span>
-    </div>
-    <div class="font-detector-info-item">
-      <span class="font-detector-info-label">Color:</span>
-      <span class="font-detector-info-value">${fontInfo.color}</span>
-    </div>
+    <div class="font-detector-font-name">${fontName}</div>
   `;
   
   // 位置を計算

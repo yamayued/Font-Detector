@@ -79,24 +79,18 @@ h2 {
 
 .font-info {
   margin-top: 20px;
-  padding: 15px;
+  padding: 20px;
   background-color: #f8f9fa;
   border: 1px solid #e9ecef;
   border-radius: 6px;
+  text-align: center;
 }
 
-.info-item {
+.font-display {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  margin-bottom: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.info-item:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
+  gap: 10px;
 }
 
 .label {
@@ -105,16 +99,14 @@ h2 {
   font-weight: 500;
 }
 
-.value {
-  font-size: 14px;
+.font-name {
+  font-size: 24px;
   color: #333;
+  font-weight: 600;
   font-family: 'Courier New', monospace;
   background-color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: 2px solid #4CAF50;
+  word-break: break-word;
 }

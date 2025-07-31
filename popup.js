@@ -30,11 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (request.action === 'fontDetected') {
       // フォント情報を表示
       fontInfo.style.display = 'block';
-      document.getElementById('fontFamily').textContent = request.fontInfo.fontFamily;
-      document.getElementById('fontSize').textContent = request.fontInfo.fontSize;
-      document.getElementById('fontWeight').textContent = request.fontInfo.fontWeight;
-      document.getElementById('lineHeight').textContent = request.fontInfo.lineHeight;
-      document.getElementById('color').textContent = request.fontInfo.color;
+      document.getElementById('fontName').textContent = request.fontName;
     }
   });
 });

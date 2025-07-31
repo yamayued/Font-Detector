@@ -7,6 +7,9 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'fontDetected') {
     // ポップアップにメッセージを転送
-    chrome.runtime.sendMessage(request);
+    chrome.runtime.sendMessage({
+      action: 'fontDetected',
+      fontName: request.fontName
+    });
   }
 });
