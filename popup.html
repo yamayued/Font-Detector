@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Font Detector</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Font Detector</h1>
+    
+    <div class="instructions">
+      <p>使い方：</p>
+      <ol>
+        <li>「検出開始」をクリック</li>
+        <li>調べたい要素にマウスを合わせる</li>
+        <li>クリックしてフォント情報を確認</li>
+      </ol>
+    </div>
+
+    <button id="toggleDetection" class="toggle-button">検出開始</button>
+    
+    <div id="fontInfo" class="font-info" style="display: none;">
+      <h2>フォント情報</h2>
+      <div class="info-item">
+        <span class="label">フォントファミリー:</span>
+        <span id="fontFamily" class="value">-</span>
+      </div>
+      <div class="info-item">
+        <span class="label">フォントサイズ:</span>
+        <span id="fontSize" class="value">-</span>
+      </div>
+      <div class="info-item">
+        <span class="label">フォントウェイト:</span>
+        <span id="fontWeight" class="value">-</span>
+      </div>
+      <div class="info-item">
+        <span class="label">行の高さ:</span>
+        <span id="lineHeight" class="value">-</span>
+      </div>
+      <div class="info-item">
+        <span class="label">文字色:</span>
+        <span id="color" class="value">-</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
