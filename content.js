@@ -4,11 +4,16 @@ let infoBox = null;
 
 // ポップアップからのメッセージを受信
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'startDetection') {
+  if (request.action === 'ping') {
+    sendResponse({ status: 'ready' });
+  } else if (request.action === 'startDetection') {
     startDetection();
+    sendResponse({ status: 'started' });
   } else if (request.action === 'stopDetection') {
     stopDetection();
+    sendResponse({ status: 'stopped' });
   }
+  return true;
 });
 
 function startDetection() {
