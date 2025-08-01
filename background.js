@@ -9,7 +9,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // ポップアップにメッセージを転送
     chrome.runtime.sendMessage({
       action: 'fontDetected',
-      fontName: request.fontName
+      fontName: request.fontName,
+      color: request.color
     }).catch(error => {
       // ポップアップが閉じられている場合のエラーを無視
       console.log('Popup is not open, ignoring message');

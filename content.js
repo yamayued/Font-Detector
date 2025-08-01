@@ -47,6 +47,9 @@ function stopDetection() {
 function handleMouseOver(e) {
   if (!isDetecting) return;
   
+  // テキストを含む要素のみを対象にする
+  if (!hasVisibleText(e.target)) return;
+  
   // 前のハイライトを削除
   if (highlightedElement) {
     highlightedElement.classList.remove('font-detector-highlight');
@@ -57,16 +60,17 @@ function handleMouseOver(e) {
   highlightedElement = e.target;
   
   // ホバー時にフォント情報を自動的に表示
-  const actualFont = getActualFont(e.target);
+  const fontInfo = getFontInfo(e.target);
   
   // ポップアップにフォント情報を送信
   chrome.runtime.sendMessage({
     action: 'fontDetected',
-    fontName: actualFont
+    fontName: fontInfo.fontName,
+    color: fontInfo.color
   });
   
   // 情報ボックスを表示
-  showInfoBox(e.target, actualFont);
+  showInfoBox(e.target, fontInfo);
 }
 
 function handleMouseOut(e) {
@@ -84,20 +88,24 @@ function handleMouseOut(e) {
 function handleClick(e) {
   if (!isDetecting) return;
   
+  // テキストを含む要素のみを対象にする
+  if (!hasVisibleText(e.target)) return;
+  
   e.preventDefault();
   e.stopPropagation();
   
-  // 実際に使用されているフォントを取得
-  const actualFont = getActualFont(e.target);
+  // フォント情報を取得
+  const fontInfo = getFontInfo(e.target);
   
   // ポップアップにフォント情報を送信
   chrome.runtime.sendMessage({
     action: 'fontDetected',
-    fontName: actualFont
+    fontName: fontInfo.fontName,
+    color: fontInfo.color
   });
   
   // 情報ボックスを表示
-  showInfoBox(e.target, actualFont);
+  showInfoBox(e.target, fontInfo);
 }
 
 // 実際に使用されているフォントを取得する関数
@@ -140,7 +148,71 @@ function isFontAvailable(fontName) {
   return defaultWidth !== fontWidth;
 }
 
-function showInfoBox(element, fontName) {
+// テキストを含む要素かチェック
+function hasVisibleText(element) {
+  // テキストノードを直接含んでいるかチェック
+  const hasDirectText = Array.from(element.childNodes).some(node => 
+    node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0
+  );
+  
+  if (hasDirectText) return true;
+  
+  // 疑似要素のコンテンツをチェック
+  const computedStyle = window.getComputedStyle(element);
+  const beforeContent = window.getComputedStyle(element, ':before').content;
+  const afterContent = window.getComputedStyle(element, ':after').content;
+  
+  if ((beforeContent && beforeContent !== 'none' && beforeContent !== '""') ||
+      (afterContent && afterContent !== 'none' && afterContent !== '""')) {
+    return true;
+  }
+  
+  // input, textareaなどの値をチェック
+  if ('value' in element && element.value) {
+    return true;
+  }
+  
+  return false;
+}
+
+// フォント情報を取得
+function getFontInfo(element) {
+  const computedStyle = window.getComputedStyle(element);
+  const actualFont = getActualFont(element);
+  const color = computedStyle.color;
+  
+  // RGBコードに変換
+  const rgbCode = convertToRGB(color);
+  
+  return {
+    fontName: actualFont,
+    color: rgbCode
+  };
+}
+
+// 色をRGBコードに変換
+function convertToRGB(color) {
+  // すでにrgb形式の場合
+  if (color.startsWith('rgb')) {
+    const matches = color.match(/\d+/g);
+    if (matches && matches.length >= 3) {
+      return `rgb(${matches[0]}, ${matches[1]}, ${matches[2]})`;
+    }
+  }
+  
+  // 16進数カラーコードの場合は変換
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 1, 1);
+  const imageData = ctx.getImageData(0, 0, 1, 1).data;
+  
+  return `rgb(${imageData[0]}, ${imageData[1]}, ${imageData[2]})`;
+}
+
+function showInfoBox(element, fontInfo) {
   // 既存の情報ボックスを削除
   if (infoBox) {
     infoBox.remove();
@@ -150,7 +222,8 @@ function showInfoBox(element, fontName) {
   infoBox = document.createElement('div');
   infoBox.className = 'font-detector-info-box';
   infoBox.innerHTML = `
-    <div class="font-detector-font-name">${fontName}</div>
+    <div class="font-detector-font-name">${fontInfo.fontName}</div>
+    <div class="font-detector-color">${fontInfo.color}</div>
   `;
   
   // 位置を計算

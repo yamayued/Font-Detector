@@ -66,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // フォント情報を表示
       fontInfo.style.display = 'block';
       document.getElementById('fontName').textContent = request.fontName;
+      document.getElementById('fontColor').textContent = request.color || '-';
     }
   });
 });
