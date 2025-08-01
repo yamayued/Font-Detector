@@ -55,12 +55,30 @@ function handleMouseOver(e) {
   // 新しい要素をハイライト
   e.target.classList.add('font-detector-highlight');
   highlightedElement = e.target;
+  
+  // ホバー時にフォント情報を自動的に表示
+  const actualFont = getActualFont(e.target);
+  
+  // ポップアップにフォント情報を送信
+  chrome.runtime.sendMessage({
+    action: 'fontDetected',
+    fontName: actualFont
+  });
+  
+  // 情報ボックスを表示
+  showInfoBox(e.target, actualFont);
 }
 
 function handleMouseOut(e) {
   if (!isDetecting) return;
   
   e.target.classList.remove('font-detector-highlight');
+  
+  // 情報ボックスを削除
+  if (infoBox) {
+    infoBox.remove();
+    infoBox = null;
+  }
 }
 
 function handleClick(e) {
