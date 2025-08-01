@@ -1,6 +1,8 @@
 let isDetecting = false;
 let highlightedElement = null;
 let infoBox = null;
+let fixedInfoBox = null;
+let isFixed = false;
 
 // ポップアップからのメッセージを受信
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -42,6 +44,13 @@ function stopDetection() {
     infoBox.remove();
     infoBox = null;
   }
+  
+  // 固定ボックスも削除
+  if (fixedInfoBox) {
+    fixedInfoBox.remove();
+    fixedInfoBox = null;
+    isFixed = false;
+  }
 }
 
 function handleMouseOver(e) {
@@ -78,8 +87,8 @@ function handleMouseOut(e) {
   
   e.target.classList.remove('font-detector-highlight');
   
-  // 情報ボックスを削除
-  if (infoBox) {
+  // 固定されていない場合のみ情報ボックスを削除
+  if (infoBox && !isFixed) {
     infoBox.remove();
     infoBox = null;
   }
@@ -87,6 +96,11 @@ function handleMouseOut(e) {
 
 function handleClick(e) {
   if (!isDetecting) return;
+  
+  // 情報ボックス内のクリックの場合は処理しない
+  if (e.target.closest('.font-detector-info-box')) {
+    return;
+  }
   
   // テキストを含む要素のみを対象にする
   if (!hasVisibleText(e.target)) return;
@@ -104,8 +118,8 @@ function handleClick(e) {
     color: fontInfo.color
   });
   
-  // 情報ボックスを表示
-  showInfoBox(e.target, fontInfo);
+  // 固定された情報ボックスを表示
+  showFixedInfoBox(e.target, fontInfo);
 }
 
 // 実際に使用されているフォントを取得する関数
@@ -213,6 +227,9 @@ function convertToRGB(color) {
 }
 
 function showInfoBox(element, fontInfo) {
+  // 固定されている場合は表示しない
+  if (isFixed) return;
+  
   // 既存の情報ボックスを削除
   if (infoBox) {
     infoBox.remove();
@@ -220,7 +237,7 @@ function showInfoBox(element, fontInfo) {
   
   // 新しい情報ボックスを作成
   infoBox = document.createElement('div');
-  infoBox.className = 'font-detector-info-box';
+  infoBox.className = 'font-detector-info-box font-detector-hover';
   infoBox.innerHTML = `
     <div class="font-detector-font-name">${fontInfo.fontName}</div>
     <div class="font-detector-color">${fontInfo.color}</div>
@@ -242,5 +259,90 @@ function showInfoBox(element, fontInfo) {
   
   if (boxRect.bottom > window.innerHeight) {
     infoBox.style.top = `${rect.top - boxRect.height - 10}px`;
+  }
+}
+
+// 固定された情報ボックスを表示
+function showFixedInfoBox(element, fontInfo) {
+  // 既存の固定ボックスを削除
+  if (fixedInfoBox) {
+    fixedInfoBox.remove();
+  }
+  
+  // ホバー用のボックスも削除
+  if (infoBox) {
+    infoBox.remove();
+    infoBox = null;
+  }
+  
+  // 新しい固定情報ボックスを作成
+  fixedInfoBox = document.createElement('div');
+  fixedInfoBox.className = 'font-detector-info-box font-detector-fixed';
+  fixedInfoBox.innerHTML = `
+    <button class="font-detector-close">×</button>
+    <div class="font-detector-info-item">
+      <span class="font-detector-label">Font:</span>
+      <span class="font-detector-font-name font-detector-copyable" data-copy="${fontInfo.fontName}">${fontInfo.fontName}</span>
+    </div>
+    <div class="font-detector-info-item">
+      <span class="font-detector-label">Color:</span>
+      <span class="font-detector-color font-detector-copyable" data-copy="${fontInfo.color}">${fontInfo.color}</span>
+    </div>
+    <div class="font-detector-copy-hint">クリックでコピー</div>
+  `;
+  
+  // 位置を計算
+  const rect = element.getBoundingClientRect();
+  fixedInfoBox.style.position = 'fixed';
+  fixedInfoBox.style.top = `${rect.bottom + 10}px`;
+  fixedInfoBox.style.left = `${rect.left}px`;
+  
+  // 画面外に出ないように調整
+  document.body.appendChild(fixedInfoBox);
+  const boxRect = fixedInfoBox.getBoundingClientRect();
+  
+  if (boxRect.right > window.innerWidth) {
+    fixedInfoBox.style.left = `${window.innerWidth - boxRect.width - 10}px`;
+  }
+  
+  if (boxRect.bottom > window.innerHeight) {
+    fixedInfoBox.style.top = `${rect.top - boxRect.height - 10}px`;
+  }
+  
+  isFixed = true;
+  
+  // イベントリスナーを追加
+  const closeButton = fixedInfoBox.querySelector('.font-detector-close');
+  closeButton.addEventListener('click', () => {
+    fixedInfoBox.remove();
+    fixedInfoBox = null;
+    isFixed = false;
+  });
+  
+  // コピー可能な要素にイベントリスナーを追加
+  const copyableElements = fixedInfoBox.querySelectorAll('.font-detector-copyable');
+  copyableElements.forEach(elem => {
+    elem.addEventListener('click', handleCopyClick);
+  });
+}
+
+// クリップボードにコピー
+async function handleCopyClick(e) {
+  const text = e.target.getAttribute('data-copy');
+  
+  try {
+    await navigator.clipboard.writeText(text);
+    
+    // コピー成功のフィードバック
+    const originalText = e.target.textContent;
+    e.target.textContent = 'コピーしました!';
+    e.target.classList.add('font-detector-copied');
+    
+    setTimeout(() => {
+      e.target.textContent = originalText;
+      e.target.classList.remove('font-detector-copied');
+    }, 1500);
+  } catch (err) {
+    console.error('Failed to copy text: ', err);
   }
 }

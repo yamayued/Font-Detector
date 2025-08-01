@@ -19,21 +19,101 @@
   text-align: left;
 }
 
+.font-detector-hover {
+  opacity: 0.9;
+}
+
+.font-detector-fixed {
+  background-color: #222;
+  border: 2px solid #4CAF50;
+  min-width: 250px;
+}
+
+.font-detector-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.font-detector-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.font-detector-info-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.font-detector-label {
+  font-size: 12px;
+  color: #999;
+  min-width: 45px;
+}
+
 .font-detector-font-name {
   font-weight: 600;
   font-family: 'Courier New', monospace;
   letter-spacing: 0.5px;
   font-size: 16px;
-  margin-bottom: 6px;
 }
 
 .font-detector-color {
   font-family: 'Courier New', monospace;
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.font-detector-hover .font-detector-color {
   color: #b3b3b3;
   margin-top: 4px;
   padding: 4px 8px;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 4px;
   display: inline-block;
+}
+
+.font-detector-copyable {
+  cursor: pointer;
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.font-detector-copyable:hover {
+  background-color: rgba(76, 175, 80, 0.3);
+  transform: translateY(-1px);
+}
+
+.font-detector-copyable:active {
+  transform: translateY(0);
+}
+
+.font-detector-copied {
+  background-color: rgba(76, 175, 80, 0.5) !important;
+  color: #4CAF50 !important;
+}
+
+.font-detector-copy-hint {
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+  margin-top: 8px;
+  font-style: italic;
 }
