@@ -1,5 +1,35 @@
 let isDetecting = false;
 
+async function ensureInjectableTab(tab) {
+  if (!tab?.url) {
+    throw new Error('No active tab');
+  }
+
+  if (
+    tab.url.startsWith('chrome://') ||
+    tab.url.startsWith('chrome-extension://') ||
+    tab.url.startsWith('edge://') ||
+    tab.url.startsWith('about:')
+  ) {
+    throw new Error('unsupported-page');
+  }
+}
+
+async function ensureFontDetectorInjected(tabId) {
+  try {
+    await chrome.tabs.sendMessage(tabId, { action: 'ping' });
+  } catch (error) {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['content.js']
+    });
+    await chrome.scripting.insertCSS({
+      target: { tabId },
+      files: ['content.css']
+    });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
   const toggleButton = document.getElementById('toggleDetection');
   const fontInfo = document.getElementById('fontInfo');
@@ -13,7 +43,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       
       // chrome:// URLsなどでは動作しない
-      if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+      try {
+        await ensureInjectableTab(tab);
+      } catch (error) {
         alert('このページでは使用できません。\n通常のウェブページでお試しください。');
         toggleButton.textContent = '検出開始';
         toggleButton.classList.remove('active');
@@ -25,25 +57,8 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleButton.textContent = '検出停止';
         toggleButton.classList.add('active');
         
-        // コンテンツスクリプトが読み込まれているか確認
-        try {
-          await chrome.tabs.sendMessage(tab.id, { action: 'ping' });
-          await chrome.tabs.sendMessage(tab.id, { action: 'startDetection' });
-        } catch (e) {
-          // コンテンツスクリプトを手動で注入
-          await chrome.scripting.executeScript({
-            target: { tabId: tab.id },
-            files: ['content.js']
-          });
-          await chrome.scripting.insertCSS({
-            target: { tabId: tab.id },
-            files: ['content.css']
-          });
-          // 少し待ってから再度送信
-          setTimeout(async () => {
-            await chrome.tabs.sendMessage(tab.id, { action: 'startDetection' });
-          }, 100);
-        }
+        await ensureFontDetectorInjected(tab.id);
+        await chrome.tabs.sendMessage(tab.id, { action: 'startDetection' });
       } else {
         toggleButton.textContent = '検出開始';
         toggleButton.classList.remove('active');
